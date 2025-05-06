@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Clima Atual (Open-Meteo)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #e0eafc, #cfdef3);
+      text-align: center;
+      padding: 40px;
+    }
+    #weather-container {
+      background: white;
+      border-radius: 10px;
+      padding: 30px;
+      display: inline-block;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input, button {
+      padding: 10px;
+      margin: 10px;
+      border-radius: 5px;
+      border: none;
+    }
+    button {
+      background-color: #0077cc;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #005fa3;
+    }
+  </style>
+</head>
+<body>
+  <div id="weather-container">
+    <h1>Consultar Clima Atual</h1>
+    <form id="weather-form">
+      <input type="text" id="city" placeholder="Digite a cidade" required />
+      <button type="submit">Ver Clima</button>
+    </form>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    document.getElementById("weather-form").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const city = document.getElementById("city").value.trim();
+
+      if (city === "") {
+        alert("Por favor, digite uma cidade.");
+        return;
+      }
+
+      // Busca coordenadas da cidade
+      fetch(`https://geocode.maps.co/search?q=${encodeURIComponent(city)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data.length) throw new Error("Cidade não encontrada.");
+          const { lat, lon, display_name } = data[0];
+
+          // Agora busca o clima com Open-Meteo
+          return fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`)
+            .then(res => res.json())
+            .then(weatherData => {
+              const temp = weatherData.current_weather.temperature;
+              const wind = weatherData.current_weather.windspeed;
+              document.getElementById("result").innerHTML = `
+                <h2>${display_name}</h2>
+                <p>Temperatura: ${temp}°C</p>
+                <p>Vento: ${wind} km/h</p>
+              `;
+            });
+        })
+        .catch(err => {
+          document.getElementById("result").innerHTML = `<p>Erro: ${err.message}</p>`;
+        });
+    });
+  </script>
+</body>
+</html>
